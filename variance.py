@@ -18,7 +18,7 @@ def load_data():
     purchase_df.columns = purchase_df.columns.str.strip()
     item_df.columns = item_df.columns.str.strip()
 
-    # Convert to numeric
+    # Convert to numeric (clean commas/spaces)
     purchase_df["Total Purchase"] = pd.to_numeric(
         purchase_df["Total Purchase"].astype(str).str.replace(",", "").str.strip(),
         errors="coerce"
@@ -36,6 +36,7 @@ def load_data():
         errors="coerce"
     )
 
+    # Merge purchase and item data
     merged_df = pd.merge(
         purchase_df,
         item_df,
@@ -44,6 +45,7 @@ def load_data():
         how="inner"
     )
 
+    # Calculate total sales value
     merged_df["Total Sales Value"] = merged_df["Selling"] * merged_df["Total Sales QTY"]
     return merged_df
 
@@ -54,10 +56,10 @@ merged_df = load_data()
 # ==========================
 st.sidebar.header("🔍 Filters")
 
-# Supplier search input (direct filter)
 supplier_search = st.sidebar.text_input("Search LP Supplier").strip().lower()
+item_search = st.sidebar.text_input("Search Item Name").strip().lower()
+barcode_search = st.sidebar.text_input("Search Item Code / Barcode").strip().lower()
 
-# Category selectbox
 category_options = ["All"] + sorted(merged_df["Category"].dropna().unique().tolist())
 selected_category = st.sidebar.selectbox("Select Category", category_options)
 
@@ -66,11 +68,26 @@ selected_category = st.sidebar.selectbox("Select Category", category_options)
 # ==========================
 filtered_df = merged_df.copy()
 
-# Filter by supplier search
+# Supplier filter
 if supplier_search:
-    filtered_df = filtered_df[filtered_df["LP Supplier"].fillna("").str.lower().str.contains(supplier_search)]
+    filtered_df = filtered_df[
+        filtered_df["LP Supplier"].fillna("").str.lower().str.contains(supplier_search)
+    ]
 
-# Filter by category
+# Item name filter
+if item_search:
+    filtered_df = filtered_df[
+        filtered_df["Items"].fillna("").str.lower().str.contains(item_search)
+    ]
+
+# Barcode/Item Code filter
+if barcode_search:
+    filtered_df = filtered_df[
+        filtered_df["Item Code"].astype(str).str.contains(barcode_search, case=False, na=False)
+        | filtered_df["Item Bar Code"].astype(str).str.contains(barcode_search, case=False, na=False)
+    ]
+
+# Category filter
 if selected_category != "All":
     filtered_df = filtered_df[filtered_df["Category"] == selected_category]
 
