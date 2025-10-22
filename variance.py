@@ -132,8 +132,6 @@ st.dataframe(
             "Selling",
             "Total Sales QTY",
             "Total Sales Value",
-            "Cost",
-            "Selling",
         ]
     ],
     use_container_width=True,
