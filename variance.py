@@ -4,7 +4,7 @@ import pandas as pd
 # ==========================
 # PAGE CONFIG
 # ==========================
-st.set_page_config(page_title="Purchase & Sales Insights Dashboard", layout="wide")
+st.set_page_config(page_title="📦 Purchase & Sales Insights Dashboard", layout="wide")
 st.title("📦 Purchase & Sales Insights Dashboard")
 
 # ==========================
@@ -18,7 +18,7 @@ def load_data():
     purchase_df.columns = purchase_df.columns.str.strip()
     item_df.columns = item_df.columns.str.strip()
 
-    # Convert to numeric
+    # Convert numeric columns
     purchase_df["Total Purchase"] = pd.to_numeric(
         purchase_df["Total Purchase"].astype(str).str.replace(",", "").str.strip(),
         errors="coerce"
@@ -47,6 +47,7 @@ def load_data():
 
     # Compute derived values
     merged_df["Total Sales Value"] = merged_df["Selling"] * merged_df["Total Sales QTY"]
+    merged_df.fillna({"Brand": "Unknown", "Category": "Unknown", "LP Supplier": "Unknown"}, inplace=True)
     return merged_df
 
 merged_df = load_data()
@@ -56,41 +57,30 @@ merged_df = load_data()
 # ==========================
 st.sidebar.header("🔍 Filters")
 
-supplier_search = st.sidebar.text_input("Search LP Supplier").strip().lower()
-item_search = st.sidebar.text_input("Search Item Name").strip().lower()
-barcode_search = st.sidebar.text_input("Search Item Code / Barcode").strip().lower()
+# LP Supplier dropdown (single select + All)
+supplier_options = ["All"] + sorted(merged_df["LP Supplier"].dropna().unique().tolist())
+selected_supplier = st.sidebar.selectbox("Select LP Supplier", supplier_options)
 
-# Category filter
+# Category dropdown
 category_options = ["All"] + sorted(merged_df["Category"].dropna().unique().tolist())
 selected_category = st.sidebar.selectbox("Select Category", category_options)
 
-# Brand filter
+# Brand dropdown
 brand_options = ["All"] + sorted(merged_df["Brand"].dropna().unique().tolist())
 selected_brand = st.sidebar.selectbox("Select Brand", brand_options)
+
+# Item / Barcode search
+item_search = st.sidebar.text_input("🔎 Search Item Name").strip().lower()
+barcode_search = st.sidebar.text_input("🔎 Search Item Code / Barcode").strip().lower()
 
 # ==========================
 # APPLY FILTERS
 # ==========================
 filtered_df = merged_df.copy()
 
-# Supplier search filter
-if supplier_search:
-    filtered_df = filtered_df[
-        filtered_df["LP Supplier"].fillna("").str.lower().str.contains(supplier_search)
-    ]
-
-# Item search filter
-if item_search:
-    filtered_df = filtered_df[
-        filtered_df["Items"].fillna("").str.lower().str.contains(item_search)
-    ]
-
-# Barcode/Item Code filter
-if barcode_search:
-    filtered_df = filtered_df[
-        filtered_df["Item Code"].astype(str).str.contains(barcode_search, case=False, na=False)
-        | filtered_df["Item Bar Code"].astype(str).str.contains(barcode_search, case=False, na=False)
-    ]
+# Supplier filter
+if selected_supplier != "All":
+    filtered_df = filtered_df[filtered_df["LP Supplier"] == selected_supplier]
 
 # Category filter
 if selected_category != "All":
@@ -99,6 +89,17 @@ if selected_category != "All":
 # Brand filter
 if selected_brand != "All":
     filtered_df = filtered_df[filtered_df["Brand"] == selected_brand]
+
+# Item search filter
+if item_search:
+    filtered_df = filtered_df[filtered_df["Items"].fillna("").str.lower().str.contains(item_search)]
+
+# Barcode/Item Code search
+if barcode_search:
+    filtered_df = filtered_df[
+        filtered_df["Item Code"].astype(str).str.contains(barcode_search, case=False, na=False)
+        | filtered_df["Item Bar Code"].astype(str).str.contains(barcode_search, case=False, na=False)
+    ]
 
 # ==========================
 # KEY INSIGHTS
@@ -133,7 +134,11 @@ st.dataframe(
             "Total Sales QTY",
             "Total Sales Value",
         ]
-    ],
+    ].style.format({
+        "Total Purchase": "{:,.2f}",
+        "Selling": "{:,.2f}",
+        "Total Sales Value": "{:,.2f}",
+    }),
     use_container_width=True,
     height=600
 )
