@@ -54,20 +54,8 @@ merged_df = load_data()
 # ==========================
 st.sidebar.header("🔍 Filters")
 
-# 1️⃣ Supplier search input
+# Supplier search input (direct filter)
 supplier_search = st.sidebar.text_input("Search LP Supplier").strip().lower()
-
-# 2️⃣ Create supplier list based on search
-all_suppliers = merged_df["LP Supplier"].fillna("").unique().tolist()
-if supplier_search:
-    filtered_suppliers = [s for s in all_suppliers if supplier_search in s.lower()]
-else:
-    filtered_suppliers = all_suppliers
-
-supplier_options = ["All"] + sorted(filtered_suppliers)
-
-# 3️⃣ Supplier selectbox
-selected_supplier = st.sidebar.selectbox("Select LP Supplier", supplier_options)
 
 # Category selectbox
 category_options = ["All"] + sorted(merged_df["Category"].dropna().unique().tolist())
@@ -78,9 +66,11 @@ selected_category = st.sidebar.selectbox("Select Category", category_options)
 # ==========================
 filtered_df = merged_df.copy()
 
-if selected_supplier != "All":
-    filtered_df = filtered_df[filtered_df["LP Supplier"] == selected_supplier]
+# Filter by supplier search
+if supplier_search:
+    filtered_df = filtered_df[filtered_df["LP Supplier"].fillna("").str.lower().str.contains(supplier_search)]
 
+# Filter by category
 if selected_category != "All":
     filtered_df = filtered_df[filtered_df["Category"] == selected_category]
 
