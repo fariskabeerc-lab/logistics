@@ -13,12 +13,12 @@ st.title("📦 Purchase & Sales Insights Dashboard")
 @st.cache_data
 def load_data():
     purchase_df = pd.read_excel("supplier jan to sep.Xlsx")
-    item_df = pd.read_excel("item analysis jan to sep.xlsx")
+    item_df = pd.read_excel("ItemSearchList.xlsx")
 
     purchase_df.columns = purchase_df.columns.str.strip()
     item_df.columns = item_df.columns.str.strip()
 
-    # Convert to numeric (clean commas/spaces)
+    # Convert to numeric
     purchase_df["Total Purchase"] = pd.to_numeric(
         purchase_df["Total Purchase"].astype(str).str.replace(",", "").str.strip(),
         errors="coerce"
@@ -36,7 +36,7 @@ def load_data():
         errors="coerce"
     )
 
-    # Merge purchase and item data
+    # Merge data
     merged_df = pd.merge(
         purchase_df,
         item_df,
@@ -45,7 +45,7 @@ def load_data():
         how="inner"
     )
 
-    # Calculate total sales value
+    # Compute derived values
     merged_df["Total Sales Value"] = merged_df["Selling"] * merged_df["Total Sales QTY"]
     return merged_df
 
@@ -60,21 +60,26 @@ supplier_search = st.sidebar.text_input("Search LP Supplier").strip().lower()
 item_search = st.sidebar.text_input("Search Item Name").strip().lower()
 barcode_search = st.sidebar.text_input("Search Item Code / Barcode").strip().lower()
 
+# Category filter
 category_options = ["All"] + sorted(merged_df["Category"].dropna().unique().tolist())
 selected_category = st.sidebar.selectbox("Select Category", category_options)
+
+# Brand filter
+brand_options = ["All"] + sorted(merged_df["Brand"].dropna().unique().tolist())
+selected_brand = st.sidebar.selectbox("Select Brand", brand_options)
 
 # ==========================
 # APPLY FILTERS
 # ==========================
 filtered_df = merged_df.copy()
 
-# Supplier filter
+# Supplier search filter
 if supplier_search:
     filtered_df = filtered_df[
         filtered_df["LP Supplier"].fillna("").str.lower().str.contains(supplier_search)
     ]
 
-# Item name filter
+# Item search filter
 if item_search:
     filtered_df = filtered_df[
         filtered_df["Items"].fillna("").str.lower().str.contains(item_search)
@@ -90,6 +95,10 @@ if barcode_search:
 # Category filter
 if selected_category != "All":
     filtered_df = filtered_df[filtered_df["Category"] == selected_category]
+
+# Brand filter
+if selected_brand != "All":
+    filtered_df = filtered_df[filtered_df["Brand"] == selected_brand]
 
 # ==========================
 # KEY INSIGHTS
@@ -116,6 +125,7 @@ st.dataframe(
             "Item Code",
             "Items",
             "Category",
+            "Brand",
             "LP Supplier",
             "Qty Purchased",
             "Total Purchase",
