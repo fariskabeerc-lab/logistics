@@ -13,7 +13,7 @@ st.title("📦 Purchase & Sales Insights ")
 @st.cache_data
 def load_data():
     purchase_df = pd.read_excel("supplier jan to sep.Xlsx")
-    item_df = pd.read_excel("ItemSearchList.xlsx")
+    item_df = pd.read_excel("ItemSearchList(1).xlsx")
 
     purchase_df.columns = purchase_df.columns.str.strip()
     item_df.columns = item_df.columns.str.strip()
