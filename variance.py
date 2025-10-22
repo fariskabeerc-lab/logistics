@@ -12,15 +12,13 @@ st.title("📦 Purchase & Sales Insights Dashboard")
 # ==========================
 @st.cache_data
 def load_data():
-    # Load Excel files
     purchase_df = pd.read_excel("supplier jan to sep.Xlsx")
     item_df = pd.read_excel("item analysis jan to sep.xlsx")
 
-    # Strip column names
     purchase_df.columns = purchase_df.columns.str.strip()
     item_df.columns = item_df.columns.str.strip()
 
-    # Convert relevant columns to numeric
+    # Convert to numeric
     purchase_df["Total Purchase"] = pd.to_numeric(
         purchase_df["Total Purchase"].astype(str).str.replace(",", "").str.strip(),
         errors="coerce"
@@ -38,7 +36,6 @@ def load_data():
         errors="coerce"
     )
 
-    # Merge purchase and item data
     merged_df = pd.merge(
         purchase_df,
         item_df,
@@ -47,7 +44,6 @@ def load_data():
         how="inner"
     )
 
-    # Calculate Total Sales Value
     merged_df["Total Sales Value"] = merged_df["Selling"] * merged_df["Total Sales QTY"]
     return merged_df
 
@@ -58,21 +54,22 @@ merged_df = load_data()
 # ==========================
 st.sidebar.header("🔍 Filters")
 
-# Supplier search input
+# 1️⃣ Supplier search input
 supplier_search = st.sidebar.text_input("Search LP Supplier").strip().lower()
 
-# Filter suppliers based on search safely (handles NaN)
+# 2️⃣ Create supplier list based on search
+all_suppliers = merged_df["LP Supplier"].fillna("").unique().tolist()
 if supplier_search:
-    supplier_options = ["All"] + sorted(
-        merged_df[merged_df["LP Supplier"].fillna("").str.lower().str.contains(supplier_search)]["LP Supplier"].unique()
-    )
+    filtered_suppliers = [s for s in all_suppliers if supplier_search in s.lower()]
 else:
-    supplier_options = ["All"] + sorted(merged_df["LP Supplier"].dropna().unique().tolist())
+    filtered_suppliers = all_suppliers
 
-# Single-select dropdown for Supplier
+supplier_options = ["All"] + sorted(filtered_suppliers)
+
+# 3️⃣ Supplier selectbox
 selected_supplier = st.sidebar.selectbox("Select LP Supplier", supplier_options)
 
-# Category dropdown
+# Category selectbox
 category_options = ["All"] + sorted(merged_df["Category"].dropna().unique().tolist())
 selected_category = st.sidebar.selectbox("Select Category", category_options)
 
@@ -81,11 +78,9 @@ selected_category = st.sidebar.selectbox("Select Category", category_options)
 # ==========================
 filtered_df = merged_df.copy()
 
-# Apply supplier filter
 if selected_supplier != "All":
     filtered_df = filtered_df[filtered_df["LP Supplier"] == selected_supplier]
 
-# Apply category filter
 if selected_category != "All":
     filtered_df = filtered_df[filtered_df["Category"] == selected_category]
 
@@ -105,7 +100,7 @@ col3.metric("💵 Total Sales Value", f"{total_sales_value:,.2f}")
 col4.metric("🧾 Total Items Purchased", total_items)
 
 # ==========================
-# DISPLAY FILTERED TABLE
+# DISPLAY TABLE
 # ==========================
 st.markdown("### 🧮 Filtered Item Details")
 st.dataframe(
