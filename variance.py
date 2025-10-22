@@ -13,7 +13,7 @@ st.title("📦 Purchase & Sales Insights Dashboard")
 @st.cache_data
 def load_data():
     purchase_df = pd.read_excel("supplier jan to sep.Xlsx")
-    item_df = pd.read_excel("item analysis jan to sep.xlsx")
+    item_df = pd.read_excel("ItemSearchList.xlsx")
 
     # Clean column names
     purchase_df.columns = purchase_df.columns.str.strip()
