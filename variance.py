@@ -133,7 +133,7 @@ st.dataframe(
             "Total Sales QTY",
             "Total Sales Value",
             "Cost",
-            "Selling"
+            "Selling",
         ]
     ],
     use_container_width=True,
