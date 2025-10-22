@@ -56,7 +56,7 @@ merged_df = load_data()
 # ==========================
 st.sidebar.header("🔍 Filters")
 
-supplier_search = st.sidebar.text_input("Search LP Supplier").strip().lower()
+supplier_search = st.sidebar.text_input("Search Supplier").strip().lower()
 item_search = st.sidebar.text_input("Search Item Name").strip().lower()
 barcode_search = st.sidebar.text_input("Search Item Code / Barcode").strip().lower()
 
