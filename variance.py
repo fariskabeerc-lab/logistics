@@ -12,6 +12,7 @@ st.title("📦 Purchase & Sales Insights Dashboard")
 # ==========================
 @st.cache_data
 def load_data():
+    # Load Excel files
     purchase_df = pd.read_excel("supplier jan to sep.Xlsx")
     item_df = pd.read_excel("item analysis jan to sep.xlsx")
 
@@ -19,7 +20,7 @@ def load_data():
     purchase_df.columns = purchase_df.columns.str.strip()
     item_df.columns = item_df.columns.str.strip()
 
-    # Convert relevant columns to numeric (remove commas and errors)
+    # Convert relevant columns to numeric
     purchase_df["Total Purchase"] = pd.to_numeric(
         purchase_df["Total Purchase"].astype(str).str.replace(",", "").str.strip(),
         errors="coerce"
@@ -37,7 +38,7 @@ def load_data():
         errors="coerce"
     )
 
-    # Merge once
+    # Merge purchase and item data
     merged_df = pd.merge(
         purchase_df,
         item_df,
@@ -60,10 +61,10 @@ st.sidebar.header("🔍 Filters")
 # Supplier search input
 supplier_search = st.sidebar.text_input("Search LP Supplier").strip().lower()
 
-# Filter suppliers based on search
+# Filter suppliers based on search safely (handles NaN)
 if supplier_search:
     supplier_options = ["All"] + sorted(
-        merged_df[merged_df["LP Supplier"].str.lower().str.contains(supplier_search)]["LP Supplier"].unique()
+        merged_df[merged_df["LP Supplier"].fillna("").str.lower().str.contains(supplier_search)]["LP Supplier"].unique()
     )
 else:
     supplier_options = ["All"] + sorted(merged_df["LP Supplier"].dropna().unique().tolist())
@@ -80,11 +81,11 @@ selected_category = st.sidebar.selectbox("Select Category", category_options)
 # ==========================
 filtered_df = merged_df.copy()
 
-# Supplier filter
+# Apply supplier filter
 if selected_supplier != "All":
     filtered_df = filtered_df[filtered_df["LP Supplier"] == selected_supplier]
 
-# Category filter
+# Apply category filter
 if selected_category != "All":
     filtered_df = filtered_df[filtered_df["Category"] == selected_category]
 
