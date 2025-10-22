@@ -15,8 +15,27 @@ def load_data():
     purchase_df = pd.read_excel("supplier jan to sep.Xlsx")
     item_df = pd.read_excel("item analysis jan to sep.xlsx")
 
+    # Strip column names
     purchase_df.columns = purchase_df.columns.str.strip()
     item_df.columns = item_df.columns.str.strip()
+
+    # Convert relevant columns to numeric (remove commas and errors)
+    purchase_df["Total Purchase"] = pd.to_numeric(
+        purchase_df["Total Purchase"].astype(str).str.replace(",", "").str.strip(),
+        errors="coerce"
+    )
+    purchase_df["Qty Purchased"] = pd.to_numeric(
+        purchase_df["Qty Purchased"].astype(str).str.replace(",", "").str.strip(),
+        errors="coerce"
+    )
+    item_df["Selling"] = pd.to_numeric(
+        item_df["Selling"].astype(str).str.replace(",", "").str.strip(),
+        errors="coerce"
+    )
+    item_df["Total Sales QTY"] = pd.to_numeric(
+        item_df["Total Sales QTY"].astype(str).str.replace(",", "").str.strip(),
+        errors="coerce"
+    )
 
     # Merge once
     merged_df = pd.merge(
@@ -38,11 +57,22 @@ merged_df = load_data()
 # ==========================
 st.sidebar.header("🔍 Filters")
 
-supplier_options = ["All"] + sorted(merged_df["LP Supplier"].dropna().unique().tolist())
-category_options = ["All"] + sorted(merged_df["Category"].dropna().unique().tolist())
+# Supplier search input
+supplier_search = st.sidebar.text_input("Search LP Supplier").strip().lower()
 
-# Single-select dropdowns
+# Filter suppliers based on search
+if supplier_search:
+    supplier_options = ["All"] + sorted(
+        merged_df[merged_df["LP Supplier"].str.lower().str.contains(supplier_search)]["LP Supplier"].unique()
+    )
+else:
+    supplier_options = ["All"] + sorted(merged_df["LP Supplier"].dropna().unique().tolist())
+
+# Single-select dropdown for Supplier
 selected_supplier = st.sidebar.selectbox("Select LP Supplier", supplier_options)
+
+# Category dropdown
+category_options = ["All"] + sorted(merged_df["Category"].dropna().unique().tolist())
 selected_category = st.sidebar.selectbox("Select Category", category_options)
 
 # ==========================
@@ -50,9 +80,11 @@ selected_category = st.sidebar.selectbox("Select Category", category_options)
 # ==========================
 filtered_df = merged_df.copy()
 
+# Supplier filter
 if selected_supplier != "All":
     filtered_df = filtered_df[filtered_df["LP Supplier"] == selected_supplier]
 
+# Category filter
 if selected_category != "All":
     filtered_df = filtered_df[filtered_df["Category"] == selected_category]
 
