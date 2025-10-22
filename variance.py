@@ -8,64 +8,53 @@ st.set_page_config(page_title="Purchase & Sales Insights Dashboard", layout="wid
 st.title("📦 Purchase & Sales Insights Dashboard")
 
 # ==========================
-# READ LOCAL FILES
+# LOAD DATA ONCE
 # ==========================
-# 🔹 Replace with your actual file paths
-purchase_file = "supplier jan to sep.Xlsx"
-item_file = "item analysis jan to sep.xlsx"
+@st.cache_data
+def load_data():
+    purchase_df = pd.read_excel("supplier jan to sep.Xlsx")
+    item_df = pd.read_excel("item analysis jan to sep.xlsx")
 
-# Read Excel files
-purchase_df = pd.read_excel(purchase_file)
-item_df = pd.read_excel(item_file)
+    purchase_df.columns = purchase_df.columns.str.strip()
+    item_df.columns = item_df.columns.str.strip()
 
-# ==========================
-# CLEAN & MERGE DATA
-# ==========================
-purchase_df.columns = purchase_df.columns.str.strip()
-item_df.columns = item_df.columns.str.strip()
+    # Merge once
+    merged_df = pd.merge(
+        purchase_df,
+        item_df,
+        left_on="Item Code",
+        right_on="Item Bar Code",
+        how="inner"
+    )
 
-merged_df = pd.merge(
-    purchase_df,
-    item_df,
-    left_on="Item Code",
-    right_on="Item Bar Code",
-    how="inner"
-)
+    # Calculate Total Sales Value
+    merged_df["Total Sales Value"] = merged_df["Selling"] * merged_df["Total Sales QTY"]
+    return merged_df
 
-# ==========================
-# CALCULATIONS
-# ==========================
-merged_df["Total Sales Value"] = merged_df["Selling"] * merged_df["Total Sales QTY"]
+merged_df = load_data()
 
 # ==========================
 # SIDEBAR FILTERS
 # ==========================
 st.sidebar.header("🔍 Filters")
 
-all_suppliers = sorted(merged_df["LP Supplier"].dropna().unique().tolist())
-all_categories = sorted(merged_df["Category"].dropna().unique().tolist())
+supplier_options = ["All"] + sorted(merged_df["LP Supplier"].dropna().unique().tolist())
+category_options = ["All"] + sorted(merged_df["Category"].dropna().unique().tolist())
 
-selected_suppliers = st.sidebar.multiselect(
-    "Select LP Supplier(s)",
-    options=["All"] + all_suppliers,
-    default=["All"]
-)
+# Single-select dropdowns
+selected_supplier = st.sidebar.selectbox("Select LP Supplier", supplier_options)
+selected_category = st.sidebar.selectbox("Select Category", category_options)
 
-selected_categories = st.sidebar.multiselect(
-    "Select Category(ies)",
-    options=["All"] + all_categories,
-    default=["All"]
-)
-
+# ==========================
+# APPLY FILTERS
+# ==========================
 filtered_df = merged_df.copy()
 
-# Apply supplier filter
-if "All" not in selected_suppliers:
-    filtered_df = filtered_df[filtered_df["LP Supplier"].isin(selected_suppliers)]
+if selected_supplier != "All":
+    filtered_df = filtered_df[filtered_df["LP Supplier"] == selected_supplier]
 
-# Apply category filter
-if "All" not in selected_categories:
-    filtered_df = filtered_df[filtered_df["Category"].isin(selected_categories)]
+if selected_category != "All":
+    filtered_df = filtered_df[filtered_df["Category"] == selected_category]
 
 # ==========================
 # KEY INSIGHTS
